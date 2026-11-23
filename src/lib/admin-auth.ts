@@ -5,14 +5,19 @@ const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 function configuredSecret(): string {
   const secret = process.env.AUTH_SECRET;
-  if (!secret) {
-    throw new Error("Admin authentication is not configured. Add AUTH_SECRET to your environment.");
+  if (!secret || Buffer.byteLength(secret) < 32) {
+    throw new Error("Admin authentication needs an AUTH_SECRET of at least 32 characters.");
   }
   return secret;
 }
 
 export function hasAdminCredentials(): boolean {
-  return Boolean(process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD && process.env.AUTH_SECRET);
+  return Boolean(
+    process.env.ADMIN_USERNAME &&
+      process.env.ADMIN_PASSWORD &&
+      process.env.AUTH_SECRET &&
+      Buffer.byteLength(process.env.AUTH_SECRET) >= 32,
+  );
 }
 
 function equalSecret(actual: string, expected: string): boolean {
@@ -24,7 +29,7 @@ function equalSecret(actual: string, expected: string): boolean {
 export function validateAdminCredentials(username: string, password: string): boolean {
   const expectedUsername = process.env.ADMIN_USERNAME;
   const expectedPassword = process.env.ADMIN_PASSWORD;
-  if (!expectedUsername || !expectedPassword || !process.env.AUTH_SECRET) return false;
+  if (!expectedUsername || !expectedPassword || !hasAdminCredentials()) return false;
   return equalSecret(username, expectedUsername) && equalSecret(password, expectedPassword);
 }
 
@@ -37,11 +42,20 @@ export function createAdminSession(username: string): string {
 }
 
 export function verifyAdminSession(token: string | undefined): boolean {
-  if (!token || !process.env.ADMIN_USERNAME || !process.env.AUTH_SECRET) return false;
+  const secret = process.env.AUTH_SECRET;
+  if (
+    !token ||
+    !process.env.ADMIN_USERNAME ||
+    !process.env.ADMIN_PASSWORD ||
+    !secret ||
+    Buffer.byteLength(secret) < 32
+  ) {
+    return false;
+  }
   const [payload, signature, extra] = token.split(".");
   if (!payload || !signature || extra) return false;
 
-  const expected = createHmac("sha256", process.env.AUTH_SECRET).update(payload).digest();
+  const expected = createHmac("sha256", secret).update(payload).digest();
   const received = Buffer.from(signature, "base64url");
   if (received.length !== expected.length || !timingSafeEqual(received, expected)) return false;
 

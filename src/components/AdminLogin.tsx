@@ -58,7 +58,7 @@ export default function AdminLogin({ configured }: { configured: boolean }) {
         ) : (
           <div className="setup-notice">
             <KeyRound size={17} />
-            <div><strong>Admin sign-in needs setup</strong><p>Add <code>ADMIN_USERNAME</code>, <code>ADMIN_PASSWORD</code>, and <code>AUTH_SECRET</code> to your environment, then restart the app.</p></div>
+            <div><strong>Admin sign-in needs setup</strong><p>Add <code>ADMIN_USERNAME</code>, <code>ADMIN_PASSWORD</code>, and an <code>AUTH_SECRET</code> of at least 32 characters, then restart the app.</p></div>
           </div>
         )}
         {error && !configured && <p className="form-error" role="alert">{error}</p>}

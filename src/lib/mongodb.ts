@@ -52,6 +52,14 @@ export async function initializeDatabase(db: Db): Promise<void> {
 }
 
 export function databaseErrorResponse(error: unknown): Response {
+  if (
+    error instanceof Error &&
+    "digest" in error &&
+    typeof error.digest === "string" &&
+    error.digest.startsWith("NEXT_")
+  ) {
+    throw error;
+  }
   console.error("MongoDB request failed:", error);
   const message =
     error instanceof Error && error.message.startsWith("MongoDB is not configured")

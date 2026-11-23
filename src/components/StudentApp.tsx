@@ -120,6 +120,7 @@ export default function StudentApp() {
   const [messageDraft, setMessageDraft] = useState("");
   const finishTestRef = useRef<(automatic?: boolean) => void>(() => undefined);
   const warningRef = useRef<(reason: string) => void>(() => undefined);
+  const warningCountRef = useRef(0);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setLoaded(true));
@@ -200,14 +201,13 @@ export default function StudentApp() {
 
   const recordWarning = useCallback(
     (reason: string) => {
-      setWarnings((current) => {
-        const next = current + 1;
-        setNotice(`${reason} Warning ${next} of ${settings.warningLimit}.`);
-        if (settings.autoSubmitOnWarnings && next >= settings.warningLimit) {
-          window.setTimeout(() => finishTestRef.current(true), 0);
-        }
-        return next;
-      });
+      const next = warningCountRef.current + 1;
+      warningCountRef.current = next;
+      setWarnings(next);
+      setNotice(`${reason} Warning ${next} of ${settings.warningLimit}.`);
+      if (settings.autoSubmitOnWarnings && next >= settings.warningLimit) {
+        window.setTimeout(() => finishTestRef.current(true), 0);
+      }
     },
     [settings.autoSubmitOnWarnings, settings.warningLimit],
   );
@@ -410,6 +410,7 @@ export default function StudentApp() {
     setFlags({});
     setQuestionIndex(0);
     setWarnings(0);
+    warningCountRef.current = 0;
     setSecondsLeft(selected.length * settings.secondsPerQuestion);
     setActiveAttemptId(null);
     setIsTesting(true);
